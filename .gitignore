@@ -1,0 +1,5 @@
+/pdf
+**/
+df_text_before_preprocessing
+moties_processed_df.pickle
+moties_unprocessed.pickle
