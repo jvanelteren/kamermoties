@@ -24,8 +24,8 @@ st.markdown(
     Heb ook nog in twee blogposts over de moties gemaakt. 
     * [Deel 1](https://jvanelteren.github.io/blog/2021/02/20/kamermotiesEDA.html) over trends
     * [Deel 2](https://jvanelteren.github.io/blog/2021/03/10/kamermoties_topics.html) over de inhoud van de moties
-    
-    Veel plezier ermee! Jesse
+
+    Veel plezier ermee en succes met stemmen 17 maart!
     """)
 
 @st.cache(allow_output_mutation=True)
@@ -91,6 +91,7 @@ def get_pca(df, n_components=1, num_largest=None, return_ratio=False):
 def pca_topic(df, topic, kamer, twodim=False):
     size=800
     column_list = df.columns
+    st.text(column_list)
     source = df[(df['Topic_initial'] == topic) & (df['Kamer'] == kamer)]
     num_moties = len(source)
     if twodim:
@@ -131,38 +132,67 @@ def pca_topic(df, topic, kamer, twodim=False):
         
         return chart
 
-search_term = st.text_input('Kies een woord of meerdere woorden', '')
+search_term = st.text_input('Kies je zoekterm(en)', '')
+
+
 
 if search_term != '':
     st.markdown(f'## Onderwerpen die het beste passen bij {search_term}')
 
-    selected_topic = 'geen'
+    # selected_topic = 'geen'
 
     # select topic
     try:
+        radio = []
         topic_words, word_scores, topic_scores, topic_nums = model.search_topics(keywords= search_term.split() , num_topics=4)
         for i, topic in enumerate(topic_words):
             st.write('Onderwerp ', topic_nums[i], ' Match: ', round(topic_scores[i]*100), '%\n\n ',' '.join(word for word in topic[:20]))
-            selected_topic = topic_nums[0]
+        # selected_topic = topic_nums[0]
+        error = False
     except:
         st.write('(Een van de) woorden komt niet voor in de ingediende moties. Probeer opnieuw')
+        error = True
     
-    if selected_topic != 'geen':
+
+    # st.sizebar.text('Gebruik deze filters om verder te specificeren welke moties je wilt zien')
+    selected_topic = st.sidebar.radio("Kies je onderwerp: ", (topic_nums), key=1)
+    selected_soort = st.sidebar.radio("Wat voor soort moties: ", (['Maakt niet uit','Aangenomen', 'Verworpen']), key=3)
+    per_partij = st.sidebar.checkbox('Per partij filteren?')
+    # with st.sidebar.beta_expander("⚙️ - Ook nog per partij filteren? ", expanded=False):
+        # st.write('Klap in om weer op alle partijen te zien')
+    selected_party = st.sidebar.radio("Kies je partij: ", (sorted(parties)), key=2)
+
+    def get_df_slice(df):
         source = df[(df['Topic_initial'] == selected_topic) & (df['Kamer'] == 'Rutte III')]
-        source = source.groupby(['Indienende_partij']).size().reset_index(name='Aantal moties')
+        if per_partij:
+            source = source[source['Indienende_partij'] == selected_party]
+        if selected_soort == 'Aangenomen':
+            source = source[source['BesluitSoort'] == 1]
+        if selected_soort == 'Verworpen':
+            source = source[source['BesluitSoort'] == 0]
+        st.text(len(source))
+        if len(source)==0:
+            error = True
+        return source
+
+
+    if not error:
+        source = get_df_slice(df)
+        
+        numvotes = source.groupby(['Indienende_partij']).size().reset_index(name='Aantal moties')
 
         # Overview of topic distribution over all years
-        chart = alt.Chart(source).mark_bar().encode(
+        chart = alt.Chart(numvotes).mark_bar().encode(
             x=alt.X('Indienende_partij:O', sort='-y'),
             y=alt.Y('Aantal moties:Q')
             # sort=alt.EncodingSortField('Aantal moties', order='descending'))
             # order=alt.Order('Aantal moties:Q',sort='descending')
         )
-        st.markdown(f'## Moties ingediend per politieke partij op dit onderwerp')
+        st.markdown(f'## Moties ingediend per politieke partij op onderwerp {selected_topic}')
         st.altair_chart(chart, use_container_width=True)
         # width and height does not work altair/streamlit
         st.markdown(f'## Stemgedrag van partijen op dit onderwerp')
-        st.altair_chart(pca_topic(df, selected_topic, 'Rutte III', twodim=True), use_container_width=True)
+        st.altair_chart(pca_topic(source, selected_topic, 'Rutte III', twodim=True), use_container_width=True)
 
         #%%
         # years = df["year"].loc[df["make"] = make_choice]
@@ -179,10 +209,9 @@ if search_term != '':
 
                 print(f"Document: {doc_id}, Score: {score}")
 
-        st.markdown('## Moties die het beste bij het onderwerp passen')
+        st.markdown(f'## Moties die het beste passen bij onderwerp {selected_topic}')
         find_semantically_similar_docs(search_term)
 
-        partij_choice = st.sidebar.selectbox('Select your vehicle:', [1,2,3,4])
         with st.beta_expander("⚙️ - Gedetailleerde uitleg ", expanded=False):
             st.write(
                 """    
