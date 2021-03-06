@@ -27,11 +27,11 @@ st.markdown(
     Veel plezier ermee en succes met stemmen 17 maart!
     """)
 
-@st.cache(allow_output_mutation=True)
+@st.cache(max_entries = 1, ttl = None, allow_output_mutation=True)
 def load_model():
-    return Top2Vec.load("data/doc2vec_deep_bigram_enhanced_stopwords")
+    return Top2Vec.load("data/doc2vec_production")
 
-@st.cache(allow_output_mutation=True)
+@st.cache(max_entries = 1, ttl = None, allow_output_mutation=True)
 def load_df():
     filename = 'data/df_production.pickle'
     with open(filename,"rb") as f:
@@ -166,11 +166,7 @@ def aantal_moties_chart(df):
 
 model = load_model()
 df = load_df()
-@st.cache
-def get_num2size():
-    topic_sizes, topic_nums = model.get_topic_sizes()
-    return {int(num):int(size) for num, size in zip(topic_nums, topic_sizes)}
-num2size = get_num2size()
+
 
 search_term = st.text_input('Kies je zoekterm(en)', '')
 
@@ -223,22 +219,20 @@ if search_term != '':
             st.altair_chart(pca_topic(source, selected_topic, 'Rutte III', twodim=True), use_container_width=True)
             st.markdown(f'## Moties die het beste passen bij onderwerp {selected_topic}')
 
+        topic_moties = list(source[(source['Topic_initial']==selected_topic)].index)
+        topic_scores = list(source[(source['Topic_initial']==selected_topic)]['Topic_score'])
+        for i in range(max_moties):
+            motie_id = topic_moties[i]
+            summary = f"Ingediend door {df.loc[motie_id,'Indienende_persoon_partij']}"
+            result = f"Resultaat: {df.loc[motie_id,'BesluitTekst']}"
+            voor = f"Voor: {', '.join(df.loc[motie_id,'Partijen_Voor'])}"
+            tegen = f"Tegen: {', '.join(df.loc[motie_id,'Partijen_Tegen'])}"
+            st.write(summary, '  \n', result, '  \n', voor, '  \n', tegen)
+            st.text_area('Inhoud van de motie:', df.loc[motie_id,'Text'], height=500, key=i)
 
-    
 
 
-        documents, document_scores, document_ids = model.search_documents_by_topic(topic_num =selected_topic, num_docs= num2size[selected_topic])
-        # documents, document_scores, document_ids = model.search_documents_by_keywords(keywords=search_term.split(), num_docs=3)
-        count = 0
-        for doc, score, doc_id in zip(documents, document_scores, document_ids):
-            if count == max_moties: break
-            if doc_id in list(source.index):
-                summary = f"Ingediend door {df.loc[doc_id,'Indienende_persoon_partij']}"
-                result = f"Resultaat: {df.loc[doc_id,'BesluitTekst']}"
-                voor = f"Voor: {', '.join(df.loc[doc_id,'Partijen_Voor'])}"
-                tegen = f"Tegen: {', '.join(df.loc[doc_id,'Partijen_Tegen'])}"
-                st.write(summary, '  \n', result, '  \n', voor, '  \n', tegen)
-                st.text_area('Inhoud van de motie:', doc, height=500, key=doc_id)
-                # print(f"Document: {doc_id}, Score: {score}")
-                count += 1
 
+
+
+# %%
