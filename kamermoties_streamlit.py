@@ -10,19 +10,20 @@ import altair as alt
 from sklearn.impute import SimpleImputer
 from sklearn.decomposition import PCA
 from copy import deepcopy
-st.title('Ik vind ... tracker')
+st.title('MotieVinder')
 
 st.markdown(
     """
-    Wat vindt jij belangrijk bij de verkiezingen? Deze app heeft met machine learning alle moties van afgelopen Tweede Kamerperiode geclusterd in 247 onderwerpen. De app matcht jouw zoekterm(en) aan gelijksoortige onderwerpen. Per onderwerp zie je:
+    Wat vindt jij belangrijk bij de verkiezingen? Deze app heeft met machine learning alle moties van afgelopen Tweede Kamerperiode geclusterd in 247 onderwerpen. De app matcht jouw zoekterm(en) aan gelijksoortige onderwerpen. 
+    Zo kan je er snel achterkomen hoe partijen hebben gestemd op wat jij belangrijk vindt. Per onderwerp zie je:
     
     1. Hoeveel moties partijen hebben ingediend
     2. Hoe partijen hebben gestemd
     3. Welke moties bij jouw onderwerp horen.
 
-    Heb ook nog in twee blogposts over de moties gemaakt. 
-    * [Deel 1](https://jvanelteren.github.io/blog/2021/02/20/kamermotiesEDA.html) over trends
-    * [Deel 2](https://jvanelteren.github.io/blog/2021/03/10/kamermoties_topics.html) over de inhoud van de moties
+    Als je dit interessant vind kan je hier meer leesvoer vinden
+    * [Blog 1](https://jvanelteren.github.io/blog/2021/02/20/kamermotiesEDA.html) over trends
+    * [Blog 2](https://jvanelteren.github.io/blog/2021/03/10/kamermoties_topics.html) over de inhoud van de moties
 
     Veel plezier ermee en succes met stemmen 17 maart!
     """)
@@ -36,8 +37,6 @@ def load_df():
     filename = 'data/df_production.pickle'
     with open(filename,"rb") as f:
         return pickle.load(f)
-
-
 
 parties = ['VVD',
  'CDA',
@@ -69,6 +68,7 @@ party_colors = {
 
 def get_stem_column(largest):
     return [c for c in df.columns if 'Stem_' in c and c != 'Stem_persoon' and c[5:] in largest]
+
 def get_pca(df, n_components=1, num_largest=None, return_ratio=False):
     largest = parties
     stem_column = get_stem_column(largest)
@@ -85,12 +85,12 @@ def get_pca(df, n_components=1, num_largest=None, return_ratio=False):
 
 def get_df_slice(df):
         source = df[(df['Topic_initial'] == selected_topic) & (df['Kamer'] == 'Rutte III')]
-        if per_partij:
+        if selected_party != 'Alle partijen':
             source = source[source['Indienende_partij'] == selected_party]
         if selected_soort == 'Aangenomen':
-            source = source[source['BesluitSoort'] == 1]
+            source = source[source['BesluitSoort'] == 'Aangenomen']
         if selected_soort == 'Verworpen':
-            source = source[source['BesluitSoort'] == 0]
+            source = source[source['BesluitSoort'] == 'Verworpen']
         if len(source)==0:
             error = True
         return source
@@ -120,26 +120,26 @@ def pca_topic(df, topic, kamer, twodim=False):
         text = points.mark_text(
             align='left',
             baseline='middle',
-            size=26,
-            dx=np.random.uniform(5,20),
-            dy=np.random.uniform(5,20)
+            size=18,
+            dx=3,
+            dy=0
             # opacity=0.5
         ).encode(
             text='partij:N'
-        )
+        ).transform_calculate(x='datum.x+ random()*0.1',y='datum.y+ (random()-0.5)*0.3')
 
-        chart = (points + text)
+        chart = (points + text).configure_view(
+            strokeWidth=0)
         chart.configure_axis(
             labelFontSize=14,
             titleFontSize=14,
-            grid=False).configure_view(
-            strokeWidth=0).configure_title(fontSize=66)
-        
+            grid=False).configure_title(fontSize=66)
+
         st.write(f'Stemgedrag op onderwerp {selected_topic}, {num_moties} moties, grafiek {round(sum(explained_variance_ratio_)*100)}% betrouwbaar')
-        
+
         with st.beta_expander("⚙️ - Uitleg ", expanded=False):
             st.write(
-                """    
+                """
             Deze techniek heet Pricipal Component Analysis en probeert variatie op veel dimensies (in dit geval veel moties)
             terug te brengen naar minder dimensies (in dit geval twee, een x en een y as). Als je bijvoorbeeld twee partijen hebt die
             altijd precies tegenovergesteld stemmen dan heb hoef je niet heel veel verschillende moties te visualiseren, maar kan je gewoon de twee tegenover elkaar
@@ -155,7 +155,12 @@ def aantal_moties_chart(df):
     # Overview of topic distribution over all years
     return alt.Chart(df).mark_bar().encode(
         x=alt.X('Indienende_partij:O', sort='-y',title=None),
-        y=alt.Y('Aantal moties:Q',title=None)
+        y=alt.Y('Aantal moties:Q',title=None),
+        color=alt.Color('BesluitTekst:N',
+                scale=alt.Scale(
+                domain=['Aangenomen','Verworpen'],
+                range=['green', 'red']),
+                legend=alt.Legend(orient="top",title=None, labelFontSize=14))
         # sort=alt.EncodingSortField('Aantal moties', order='descending'))
         # order=alt.Order('Aantal moties:Q',sort='descending')
     ).configure_axis(
@@ -173,8 +178,7 @@ search_term = st.text_input('Kies je zoekterm(en)', '')
 # select relevant topic topic
 if search_term != '':
     try:
-        topic_words, word_scores, topic_scores, topic_nums = model.search_topics(keywords= search_term.split() , num_topics=4)
-        # selected_topic = topic_nums[0]
+        topic_words, word_scores, topic_scores, topic_nums = model.search_topics(keywords= search_term.split() , num_topics=3)
         error = False
     except:
         st.write('(Een van de) woorden komt niet voor in de ingediende moties. Probeer opnieuw')
@@ -184,8 +188,8 @@ if search_term != '':
         st.markdown(f'## Onderwerpen die het beste passen bij {search_term}')
         with st.beta_expander("⚙️ - Uitleg ", expanded=False):
             st.write(
-                """    
-            Het Top2Vec algoritme heeft op basis van de woorden in de moties ze geclustert in heel veel onderwerpen.
+                """
+            Het Top2Vec algoritme heeft moties (op basis van de woorden) geclustert in heel veel onderwerpen.
             Alle onderwerpen hebben een nummer gekregen, beginnend met 0. Het ontwerp dat het beste matched met jouw
             zoekterm staat bovenaan. Een match score van boven de 20 is meestal wel goed.
 
@@ -194,41 +198,50 @@ if search_term != '':
             de andere onderwerpen kiezen om deze verder te onderzoeken.
                 """
             )
-        for i, topic in enumerate(topic_words):
-            st.write('Onderwerp ', topic_nums[i], ' Match: ', round(topic_scores[i]*100), '\n\n ',' '.join(word for word in topic[:20]))
+        selected_topic = topic_nums[0]
+        for i, (topic, topic_num) in enumerate(zip(topic_words, topic_nums)):
+            # st.write('Onderwerp ', topic_nums[i], ' Match: ', round(topic_scores[i]*100), '\n\n ',' '.join(word for word in topic[:20]))
+            st.write('Onderwerp ', topic_nums[i], ' Match: ', round(topic_scores[i]*100))
+            if st.button(' '.join(word for word in topic[:20]), key=i):
+                selected_topic = topic_num
+
+
+        # cted_soort = st.radio("Wat voor soort moties: ", (['opwarming aarde broeikasgassen milieuraad co_reductie co uitstoot co_uitstoot klimaatakkoord ets emissies klimaat klimaatdoelen kabinetsaanpak_klimaatbeleid reductie parijs klimaatbeleid wereldwijde duurzame_ontwikkeling doelstelling','opwarming aarde broeikasgassen milieuraad co_reductie co uitstoot co_uitstoot klimaatakkoord ets emissies klimaat klimaatdoelen kabinetsaanpak_klimaatbeleid reductie parijs klimaatbeleid wereldwijde duurzame_ontwikkeling doelstelling']), key=6)
+        
 
         st.sidebar.markdown('Gebruik deze filters om de moties verder te filteren. De grafieken en moties updaten vanzelf')
-        selected_topic = st.sidebar.radio("Kies je onderwerp: ", (topic_nums), key=1)
-        selected_soort = st.sidebar.radio("Wat voor soort moties: ", (['Maakt niet uit','Aangenomen', 'Verworpen']), key=3)
-        per_partij = st.sidebar.checkbox('Per partij filteren?')
-        selected_party = st.sidebar.radio("Kies je partij: ", (sorted(parties)), key=2)
-        skip_graphs = st.sidebar.checkbox('Schiet op (zet grafieken uit, voor als je alleen in de moties geïnteresseerd bent', value=False)
+        # selected_topic = st.sidebar.radio("Kies je onderwerp: ", (topic_nums), key=1)
+        selected_soort = st.sidebar.radio("Wat voor soort moties: ", (['Aangenomen en verworpen','Aangenomen', 'Verworpen']), key=3)
+        selected_party = st.sidebar.radio("Kies je partij: ", (['Alle partijen'] + sorted(parties)), key=2)
         max_moties = st.sidebar.slider('maximaal aantal weergegeven moties', 0, 20,5)
 
         # select data and plot charts
         source = get_df_slice(df)
 
         st.markdown(f'## {len(source)} Moties ingediend door partijen op onderwerp {selected_topic}')
-        if not skip_graphs:
-            chart = aantal_moties_chart(source.groupby(['Indienende_partij']).size().reset_index(name='Aantal moties'))
-            st.altair_chart(chart, use_container_width=True)
+        chart = aantal_moties_chart(source.groupby(['Indienende_partij', 'BesluitTekst']).size().reset_index(name='Aantal moties'))
+        st.altair_chart(chart, use_container_width=True)
 
-            # width and height does not work altair/streamlit
+        # width and height does not work altair/streamlit
+        if len(source)>2:
             st.markdown(f'## Stemgedrag van partijen op onderwerp {selected_topic}')
-
             st.altair_chart(pca_topic(source, selected_topic, 'Rutte III', twodim=True), use_container_width=True)
+        if len(source)>0:
             st.markdown(f'## Moties die het beste passen bij onderwerp {selected_topic}')
 
-        topic_moties = list(source[(source['Topic_initial']==selected_topic)].index)
-        topic_scores = list(source[(source['Topic_initial']==selected_topic)]['Topic_score'])
-        for i in range(max_moties):
-            motie_id = topic_moties[i]
-            summary = f"Ingediend door {df.loc[motie_id,'Indienende_persoon_partij']}"
-            result = f"Resultaat: {df.loc[motie_id,'BesluitTekst']}"
-            voor = f"Voor: {', '.join(df.loc[motie_id,'Partijen_Voor'])}"
-            tegen = f"Tegen: {', '.join(df.loc[motie_id,'Partijen_Tegen'])}"
-            st.write(summary, '  \n', result, '  \n', voor, '  \n', tegen)
-            st.text_area('Inhoud van de motie:', df.loc[motie_id,'Text'], height=500, key=i)
+            topic_moties = list(source[(source['Topic_initial']==selected_topic)].index)
+            topic_scores = list(source[(source['Topic_initial']==selected_topic)]['Topic_score'])
+            for i in range(min(max_moties, len(source))):
+                motie_id = topic_moties[i]
+                summary = f"Ingediend door {df.loc[motie_id,'Indienende_persoon_partij']}"
+                result = f"Resultaat: {df.loc[motie_id,'BesluitTekst']}"
+                voor = f"Voor: {', '.join(df.loc[motie_id,'Partijen_Voor'])}"
+                tegen = f"Tegen: {', '.join(df.loc[motie_id,'Partijen_Tegen'])}"
+                st.write(summary, '  \n', result, '  \n', voor, '  \n', tegen)
+                st.text_area('Inhoud van de motie:', df.loc[motie_id,'Text'], height=500, key=i)
+        else:
+            st.markdown(f'### Geen moties gevonden (staan er filters aan?)')
+
 
 
 
