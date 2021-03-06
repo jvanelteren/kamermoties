@@ -33,7 +33,7 @@ def load_model():
 
 @st.cache(allow_output_mutation=True)
 def load_df():
-    filename = 'data/df_including_topics_full.pickle'
+    filename = 'data/df_production.pickle'
     with open(filename,"rb") as f:
         return pickle.load(f)
 
@@ -140,7 +140,7 @@ def pca_topic(df, topic, kamer, twodim=False):
         with st.beta_expander("⚙️ - Uitleg ", expanded=False):
             st.write(
                 """    
-            Deze tecniek heet Pricipal Component Analysis en probeert variatie op veel dimensies (in dit geval veel moties)
+            Deze techniek heet Pricipal Component Analysis en probeert variatie op veel dimensies (in dit geval veel moties)
             terug te brengen naar minder dimensies (in dit geval twee, een x en een y as). Als je bijvoorbeeld twee partijen hebt die
             altijd precies tegenovergesteld stemmen dan heb hoef je niet heel veel verschillende moties te visualiseren, maar kan je gewoon de twee tegenover elkaar
             op één as tekenen.
@@ -232,11 +232,11 @@ if search_term != '':
         count = 0
         for doc, score, doc_id in zip(documents, document_scores, document_ids):
             if count == max_moties: break
-            if doc_id in list(source['Index']):
-                summary = f"Ingediend door {df.iloc[doc_id]['Indienende_persoon_partij']}"
-                result = f"Resultaat: {df.iloc[doc_id]['BesluitTekst']}"
-                voor = f"Voor: {', '.join(df.iloc[doc_id]['Partijen_Voor'])}"
-                tegen = f"Tegen: {', '.join(df.iloc[doc_id]['Partijen_Tegen'])}"
+            if doc_id in list(source.index):
+                summary = f"Ingediend door {df.loc[doc_id,'Indienende_persoon_partij']}"
+                result = f"Resultaat: {df.loc[doc_id,'BesluitTekst']}"
+                voor = f"Voor: {', '.join(df.loc[doc_id,'Partijen_Voor'])}"
+                tegen = f"Tegen: {', '.join(df.loc[doc_id,'Partijen_Tegen'])}"
                 st.write(summary, '  \n', result, '  \n', voor, '  \n', tegen)
                 st.text_area('Inhoud van de motie:', doc, height=500, key=doc_id)
                 # print(f"Document: {doc_id}, Score: {score}")
