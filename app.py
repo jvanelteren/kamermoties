@@ -13,19 +13,14 @@ import os
 import re
 
 
-# code = """<script async defer data-domain="stemvinder.ew.r.appspot.com" src="https://plausible.io/js/plausible.js"></script>"""
-# a=os.path.dirname(st.__file__)+'/static/index.html'
-# with open(a, 'r') as f:
-#     data=f.read()
-#     if len(re.findall('plausible', data))==0:
-#         with open(a, 'w') as ff:
-#             newdata=re.sub('<head>','<head>'+code,data)
-#             ff.write(newdata)
-
-
-
-
-
+code = """<script async defer data-domain="stemvinder.ew.r.appspot.com" src="https://plausible.io/js/plausible.js"></script>"""
+a=os.path.dirname(st.__file__)+'/static/index.html'
+with open(a, 'r') as f:
+    data=f.read()
+    if len(re.findall('plausible', data))==0:
+        with open(a, 'w') as ff:
+            newdata=re.sub('<head>','<head>'+code,data)
+            ff.write(newdata)
 
 # hide hamburger menu
 hide_streamlit_style = """
@@ -35,10 +30,6 @@ hide_streamlit_style = """
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
-
-
-
-
 
 
 
