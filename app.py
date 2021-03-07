@@ -36,12 +36,12 @@ st.title('StemVinder')
 with st.beta_expander("⚙️ - Introductie ", expanded=True):
     st.markdown(
         """
-        Wat vindt jij belangrijk bij de verkiezingen? Deze app heeft met machine learning alle moties van afgelopen Tweede Kamerperiode geclusterd in 247 onderwerpen. De app matcht jouw zoekterm(en) aan gelijksoortige onderwerpen. 
+        Wat vind jij belangrijk bij de verkiezingen? Deze app heeft met machine learning alle moties van afgelopen Tweede Kamerperiode geclusterd in 247 onderwerpen. De app matcht jouw zoekterm(en) aan gelijksoortige onderwerpen. 
         Zo kan je er snel achterkomen hoe partijen hebben gestemd op wat jij belangrijk vindt. Per onderwerp zie je:
         
         1. Hoeveel moties partijen hebben ingediend
         2. Hoe partijen hebben gestemd
-        3. Welke moties bij jouw onderwerp horen.
+        3. Wat de meest relevante moties zijn
 
         Als je dit interessant vindt is er nog meer leesvoer:
         * [Blog 1](https://jvanelteren.github.io/blog/2021/02/20/kamermotiesEDA.html) over trends
