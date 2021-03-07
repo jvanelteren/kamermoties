@@ -12,19 +12,12 @@ from sklearn.decomposition import PCA
 import os
 import re
 
-# code = """<!-- Global site tag (gtag.js) - Google Analytics -->
-# <script async src="https://www.googletagmanager.com/gtag/js?id=G-09CM9J6QJS"></script>
-# <script>
-#   window.dataLayer = window.dataLayer || [];
-#   function gtag(){dataLayer.push(arguments);}
-#   gtag('js', new Date());
-#   gtag('config', 'G-09CM9J6QJS');
-# </script>"""
 
+# code = """<script async defer data-domain="stemvinder.ew.r.appspot.com" src="https://plausible.io/js/plausible.js"></script>"""
 # a=os.path.dirname(st.__file__)+'/static/index.html'
 # with open(a, 'r') as f:
 #     data=f.read()
-#     if len(re.findall('G-09CM9J6QJS', data))==0:
+#     if len(re.findall('plausible', data))==0:
 #         with open(a, 'w') as ff:
 #             newdata=re.sub('<head>','<head>'+code,data)
 #             ff.write(newdata)
@@ -127,6 +120,8 @@ def get_df_slice(df):
         source = df[(df['Topic_initial'] == selected_topic) & (df['Kamer'] == 'Rutte III')]
         if selected_party != 'Alle partijen':
             source = source[source['Indienende_partij'] == selected_party]
+        if selected_year != 'Alle jaren':
+            source = source[source['Jaar'] == int(selected_year)]
         if selected_soort == 'Aangenomen':
             source = source[source['BesluitSoort'] == 'Aangenomen']
         if selected_soort == 'Verworpen':
@@ -136,7 +131,6 @@ def get_df_slice(df):
         return source
 
 def pca_topic(df, topic, kamer, twodim=False):
-    size=800
     column_list = df.columns
     source = df[(df['Topic_initial'] == topic) & (df['Kamer'] == kamer)]
     num_moties = len(source)
@@ -149,7 +143,10 @@ def pca_topic(df, topic, kamer, twodim=False):
     if source[source['partij'] =='VVD']['x'].values > median: # make sure that VVD is on the right part of the x-axis
         source['x'] += 2 * (mid - source['x'])
     if twodim:
-        points = alt.Chart(source).mark_point().encode(
+        st.write(explained_variance_ratio_[0], explained_variance_ratio_[1])
+        width = 700
+        y_scale_ratio = explained_variance_ratio_[1]/explained_variance_ratio_[0]
+        points = alt.Chart(source,width= width, height = width * y_scale_ratio).mark_point().encode(
         # x=alt.X('x:Q', axis=alt.Axis(title='Eerste factor')),
         # y=alt.Y('y:Q', axis=alt.Axis(title='Tweede factor')),
         x=alt.X('x:Q', axis=None),
@@ -185,8 +182,12 @@ def pca_topic(df, topic, kamer, twodim=False):
             altijd precies tegenovergesteld stemmen dan heb hoef je niet heel veel verschillende moties te visualiseren, maar kan je gewoon de twee tegenover elkaar
             op één as tekenen.
 
-            Het betrouwbaarheid percentage geeft aan hoeveel van de variatie in het stemgedrag wordt verklaard door de grafiek. Hoe lager dit is des te minder waarde 
-            kan je er aan hechten.
+            De afstand tussen twee partijen geeft aan hoe verschillend ze stemmen. 
+            Het betrouwbaarheid percentage geeft aan hoeveel van de variatie in het stemgedrag wordt verklaard door de grafiek. Hoe lager dit is des te minder waarde
+            je eraan moet hechten. 
+            
+            Een voorbeeld: stel dat twee partijen precies op hetzelfde punt staan, dan betekent dit bij een betrouwbaarheid van 100% dat ze identiek stemmen.
+            Maar als het percentage 50% is betekent dat er nog steeds flink wat variatie is in het stemgedrag is dat niet wordt verklaard door de grafiek.
                 """
             )
         return chart
@@ -249,10 +250,11 @@ if search_term != '':
         # cted_soort = st.radio("Wat voor soort moties: ", (['opwarming aarde broeikasgassen milieuraad co_reductie co uitstoot co_uitstoot klimaatakkoord ets emissies klimaat klimaatdoelen kabinetsaanpak_klimaatbeleid reductie parijs klimaatbeleid wereldwijde duurzame_ontwikkeling doelstelling','opwarming aarde broeikasgassen milieuraad co_reductie co uitstoot co_uitstoot klimaatakkoord ets emissies klimaat klimaatdoelen kabinetsaanpak_klimaatbeleid reductie parijs klimaatbeleid wereldwijde duurzame_ontwikkeling doelstelling']), key=6)
         
 
-        st.sidebar.markdown('Gebruik deze filters om de moties verder te filteren. De grafieken en moties updaten vanzelf')
-        # selected_topic = st.sidebar.radio("Kies je onderwerp: ", (topic_nums), key=1)
-        selected_soort = st.sidebar.radio("Wat voor soort moties: ", (['Aangenomen en verworpen','Aangenomen', 'Verworpen']), key=3)
-        selected_party = st.sidebar.radio("Kies je partij: ", (['Alle partijen'] + sorted(parties)), key=2)
+        st.sidebar.markdown('Gebruik deze filters om verder te filteren. De grafieken en moties updaten vanzelf')
+        selected_soort = st.sidebar.radio("Motie uitkomst: ", (['Aangenomen en verworpen','Aangenomen', 'Verworpen']), key=3)
+        selected_party = st.sidebar.radio("Indienende partij: ", (['Alle partijen'] + sorted(parties)), key=2)
+        selected_year= st.sidebar.radio("Ingediend in: ", (['Alle jaren'] + ['2017', '2018', '2019', '2020']), key=3)
+
         max_moties = st.sidebar.slider('maximaal aantal weergegeven moties', 0, 20,5)
 
         # select data and plot charts
@@ -265,7 +267,7 @@ if search_term != '':
         # width and height does not work altair/streamlit
         if len(source)>2:
             st.markdown(f'## Stemgedrag van partijen op onderwerp {selected_topic}')
-            st.altair_chart(pca_topic(source, selected_topic, 'Rutte III', twodim=True), use_container_width=True)
+            st.altair_chart(pca_topic(source, selected_topic, 'Rutte III', twodim=True), use_container_width=True  )
         if len(source)>0:
             st.markdown(f'## Moties die het beste passen bij onderwerp {selected_topic}')
 
