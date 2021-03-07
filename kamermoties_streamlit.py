@@ -9,8 +9,29 @@ import numpy as np
 import altair as alt
 from sklearn.impute import SimpleImputer
 from sklearn.decomposition import PCA
-from copy import deepcopy
-st.title('MotieVinder')
+import os
+import re
+
+code = """<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-09CM9J6QJS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-09CM9J6QJS');
+</script>"""
+
+a=os.path.dirname(st.__file__)+'/static/index.html'
+with open(a, 'r') as f:
+    data=f.read()
+    if len(re.findall('G-09CM9J6QJS', data))==0:
+        with open(a, 'w') as ff:
+            newdata=re.sub('<head>','<head>'+code,data)
+            ff.write(newdata)
+
+
+st.image('data/moties.jpg',use_column_width=True)
+st.title('StemVinder')
 
 st.markdown(
     """
