@@ -12,22 +12,41 @@ from sklearn.decomposition import PCA
 import os
 import re
 
-code = """<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-09CM9J6QJS"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-09CM9J6QJS');
-</script>"""
+# code = """<!-- Global site tag (gtag.js) - Google Analytics -->
+# <script async src="https://www.googletagmanager.com/gtag/js?id=G-09CM9J6QJS"></script>
+# <script>
+#   window.dataLayer = window.dataLayer || [];
+#   function gtag(){dataLayer.push(arguments);}
+#   gtag('js', new Date());
+#   gtag('config', 'G-09CM9J6QJS');
+# </script>"""
 
-a=os.path.dirname(st.__file__)+'/static/index.html'
-with open(a, 'r') as f:
-    data=f.read()
-    if len(re.findall('G-09CM9J6QJS', data))==0:
-        with open(a, 'w') as ff:
-            newdata=re.sub('<head>','<head>'+code,data)
-            ff.write(newdata)
+# a=os.path.dirname(st.__file__)+'/static/index.html'
+# with open(a, 'r') as f:
+#     data=f.read()
+#     if len(re.findall('G-09CM9J6QJS', data))==0:
+#         with open(a, 'w') as ff:
+#             newdata=re.sub('<head>','<head>'+code,data)
+#             ff.write(newdata)
+
+
+
+
+
+
+# hide hamburger menu
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
+
+
+
+
 
 
 st.image('data/moties.jpg',use_column_width=True)
@@ -97,7 +116,7 @@ def get_pca(df, n_components=1, num_largest=None, return_ratio=False):
     X_year = SimpleImputer(strategy='most_frequent').fit_transform(source_year)
     pca = PCA(n_components = n_components)
     pca = pca.fit(X_year)
-    print('explained variance by factors', pca.explained_variance_ratio_,pca.explained_variance_ratio_.sum())  
+    # print('explained variance by factors', pca.explained_variance_ratio_,pca.explained_variance_ratio_.sum())  
     res_year = pca.transform(X_year)
     source = pd.DataFrame(res_year)
     source['partij'] = source_year.T.columns.str[5:]
@@ -264,7 +283,22 @@ if search_term != '':
             st.markdown(f'### Geen moties gevonden (staan er filters aan?)')
 
 
+    with st.beta_expander("⚙️ - Thanks & feedback ", expanded=False):
+        st.markdown(
+                """
+         
+            Heb je een inzichten opgedaan, feedback op de app of wil je contact opnemen? Laat het weten, bijvoorbeeld door te reageren op m'n [LinkedIn](https://www.linkedin.com/in/jessevanelteren/) post.
 
+            Dank gaat uit naar:
+        
+            * :sun_with_face: [Tweede Kamer Open Data Portaal](https://opendata.tweedekamer.nl/) voor het beschikbaar maken van de moties via een API
+            * :sun_with_face: [Willem Glasbergen](https://www.linkedin.com/in/willemglasbergen) die me via [Longhow Lam](https://www.linkedin.com/posts/longhowlam_top2vec-stem-helper-activity-6772061735844098048-zKd6) op Top2Vec attendeerde
+            * :sun_with_face: Dimo Angelov, bedenker en ontwikkelaar van [Top2Vec](https://github.com/ddangelov/Top2Vec)
+            * :sun_with_face: [Streamlit](https://streamlit.io/) voor het maken van zo'n geweldige library
+
+            [![License: Creative Commons Naamsvermelding-GelijkDelen 4.0 Internationaal-licentie](https://i.creativecommons.org/l/by-sa/4.0/80x15.png)](https://creativecommons.org/licenses/by-sa/3.0/) 2021 Jesse van Elteren
+                """
+        )
 
 
 
