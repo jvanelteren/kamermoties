@@ -1,11 +1,9 @@
 #%%
 import streamlit as st
 import pandas as pd
-from pathlib import Path
 from streamlit.caching import cache
 from top2vec import Top2Vec
 import pickle
-import numpy as np
 import altair as alt
 from sklearn.impute import SimpleImputer
 from sklearn.decomposition import PCA
@@ -13,14 +11,14 @@ import os
 import re
 
 
-code = """<script async defer data-domain="stemvinder.ew.r.appspot.com" src="https://plausible.io/js/plausible.js"></script>"""
-a=os.path.dirname(st.__file__)+'/static/index.html'
-with open(a, 'r') as f:
-    data=f.read()
-    if len(re.findall('plausible', data))==0:
-        with open(a, 'w') as ff:
-            newdata=re.sub('<head>','<head>'+code,data)
-            ff.write(newdata)
+# code = """<script async defer data-domain="stemvinder.ew.r.appspot.com" src="https://plausible.io/js/plausible.js"></script>"""
+# a=os.path.dirname(st.__file__)+'/static/index.html'
+# with open(a, 'r') as f:
+#     data=f.read()
+#     if len(re.findall('plausible', data))==0:
+#         with open(a, 'w') as ff:
+#             newdata=re.sub('<head>','<head>'+code,data)
+#             ff.write(newdata)
 
 # hide hamburger menu
 hide_streamlit_style = """
@@ -69,6 +67,7 @@ parties = ['VVD',
  'SGP',
  'FVD',
  'PVV',
+ '50PLUS',
  'PvdA',
  'DENK',
  'GroenLinks',
@@ -88,7 +87,9 @@ party_colors = {
   'VVD':'#ff7f0e',
   'DENK':'#17becf',
   'FVD':'#800000',
-  'Groep Krol/vKA':'pink'}
+  'Groep Krol/vKA':'pink',
+  '50PLUS':'#93117e'
+}
 
 def get_stem_column(largest):
     return [c for c in df.columns if 'Stem_' in c and c != 'Stem_persoon' and c[5:] in largest]
@@ -108,18 +109,21 @@ def get_pca(df, n_components=1, num_largest=None, return_ratio=False):
     return (source, pca.explained_variance_ratio_) if return_ratio else source
 
 def get_df_slice(df):
-        source = df[(df['Topic_initial'] == selected_topic) & (df['Kamer'] == 'Rutte III')]
-        if selected_party != 'Alle partijen':
-            source = source[source['Indienende_partij'] == selected_party]
-        if selected_year != 'Alle jaren':
-            source = source[source['Jaar'] == int(selected_year)]
-        if selected_soort == 'Aangenomen':
-            source = source[source['BesluitSoort'] == 'Aangenomen']
-        if selected_soort == 'Verworpen':
-            source = source[source['BesluitSoort'] == 'Verworpen']
-        if len(source)==0:
-            error = True
-        return source
+
+    source = df[(df['Topic_initial'] == selected_topic) & (df['Kamer'] == 'Rutte III')]
+    if selected_party != 'Alle partijen':
+        source = source[source['Indienende_partij'] == selected_party]
+    if selected_year != 'Alle jaren':
+        source = source[source['Jaar'] == int(selected_year)]
+    if selected_soort == 'Aangenomen':
+        source = source[source['BesluitTekst'] == 'Aangenomen']
+    if selected_soort == 'Verworpen':
+        source = source[source['BesluitTekst'] == 'Verworpen']
+    if len(source)==0:
+        error = True
+    return source
+
+
 
 def pca_topic(df, topic, kamer, twodim=False):
     column_list = df.columns
@@ -227,29 +231,32 @@ if search_term != '':
             Je kan ook verder filteren met het linkermenu (pijltje linksboven voor mobiele gebruikers).
                 """
             )
-        selected_topic = topic_nums[0]
-        selected_topic_summary = ' '.join(word for word in topic_words[0][:3])
+        # selected_topic = topic_nums[0]
+        # selected_topic_idx = 0
+    
         for i, (topic, topic_num) in enumerate(zip(topic_words, topic_nums)):
-            # st.write('Onderwerp ', topic_nums[i], ' Match: ', round(topic_scores[i]*100), '\n\n ',' '.join(word for word in topic[:20]))
-            # st.write('Onderwerp ', topic_nums[i], ' Match: ', round(topic_scores[i]*100))
-            if st.button(' '.join(word for word in topic[:20]), key=i):
-                selected_topic = topic_num
-
-
-        # cted_soort = st.radio("Wat voor soort moties: ", (['opwarming aarde broeikasgassen milieuraad co_reductie co uitstoot co_uitstoot klimaatakkoord ets emissies klimaat klimaatdoelen kabinetsaanpak_klimaatbeleid reductie parijs klimaatbeleid wereldwijde duurzame_ontwikkeling doelstelling','opwarming aarde broeikasgassen milieuraad co_reductie co uitstoot co_uitstoot klimaatakkoord ets emissies klimaat klimaatdoelen kabinetsaanpak_klimaatbeleid reductie parijs klimaatbeleid wereldwijde duurzame_ontwikkeling doelstelling']), key=6)
-        
+            st.markdown(', '.join(word for word in topic[:20]))
 
         st.sidebar.markdown('Gebruik deze filters om verder te filteren. De grafieken en moties updaten vanzelf')
-        selected_soort = st.sidebar.radio("Motie uitkomst: ", (['Aangenomen en verworpen','Aangenomen', 'Verworpen']), key=3)
-        selected_party = st.sidebar.radio("Indienende partij: ", (['Alle partijen'] + sorted(parties)), key=2)
-        selected_year= st.sidebar.radio("Ingediend in: ", (['Alle jaren'] + ['2017', '2018', '2019', '2020']), key=3)
-
+        topic_options = [' '.join(word for word in topic[:1]) for topic in topic_words]
+        selected_topic = st.sidebar.radio("Onderwerp: ", (topic_options), key=6)
+        selected_soort = st.sidebar.radio("Motie uitkomst: ", (['Aangenomen en verworpen','Aangenomen', 'Verworpen']), key=7)
+        selected_party = st.sidebar.radio("Indienende partij: ", (['Alle partijen'] + sorted(parties)), key=8)
+        selected_year= st.sidebar.radio("Ingediend in: ", (['Alle jaren'] + ['2017', '2018', '2019', '2020']), key=9)
         max_moties = st.sidebar.slider('maximaal aantal weergegeven moties', 0, 20,5)
+
+        selected_topic_idx = topic_options.index(selected_topic)
+        assert selected_topic_idx in [0,1,2]
+
+        selected_topic = topic_nums[selected_topic_idx]
+        assert selected_topic in list(range(250))
 
         # select data and plot charts
         source = get_df_slice(df)
+        selected_topic_summary = ' '.join(word for word in topic_words[selected_topic_idx][:1])
+        st.markdown(f'## Geselecteerd onderwerp: "{selected_topic_summary}"')
+        st.write('Filters:',selected_soort,selected_party,selected_year)
 
-        st.markdown(f'## "{selected_topic_summary}"')
         st.write(len(source), 'moties ingediend')
         chart = aantal_moties_chart(source.groupby(['Indienende_partij', 'BesluitTekst']).size().reset_index(name='Aantal moties'))
         st.altair_chart(chart, use_container_width=True)
