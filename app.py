@@ -11,14 +11,14 @@ import os
 import re
 
 
-# code = """<script async defer data-domain="stemvinder.ew.r.appspot.com" src="https://plausible.io/js/plausible.js"></script>"""
-# a=os.path.dirname(st.__file__)+'/static/index.html'
-# with open(a, 'r') as f:
-#     data=f.read()
-#     if len(re.findall('plausible', data))==0:
-#         with open(a, 'w') as ff:
-#             newdata=re.sub('<head>','<head>'+code,data)
-#             ff.write(newdata)
+code = """<script async defer data-domain="stemvinder.ew.r.appspot.com" src="https://plausible.io/js/plausible.js"></script>"""
+a=os.path.dirname(st.__file__)+'/static/index.html'
+with open(a, 'r') as f:
+    data=f.read()
+    if len(re.findall('plausible', data))==0:
+        with open(a, 'w') as ff:
+            newdata=re.sub('<head>','<head>'+code,data)
+            ff.write(newdata)
 
 # hide hamburger menu
 hide_streamlit_style = """
@@ -137,7 +137,7 @@ def pca_topic(df, topic, twodim=False):
     # if source[source['partij'] =='VVD']['x'].values > median: # make sure that VVD is on the right part of the x-axis
     #     source['x'] += 2 * (mid - source['x'])
     if twodim:
-        width = 700
+        width = 500
         y_scale_ratio = explained_variance_ratio_[1]/explained_variance_ratio_[0]
         points = alt.Chart(source,width= width, height = width * y_scale_ratio).mark_point().encode(
         # x=alt.X('x:Q', axis=alt.Axis(title='Eerste factor')),
@@ -285,7 +285,7 @@ if search_term != '':
         st.markdown(
                 """
          
-            Heb je een inzichten opgedaan, feedback op de app of wil je contact opnemen? Laat het weten, bijvoorbeeld door te reageren op m'n [LinkedIn](https://www.linkedin.com/in/jessevanelteren/) post.
+            Heb je een inzichten opgedaan, feedback op de app of wil je contact opnemen? Laat het weten, bijvoorbeeld door te reageren op m'n [LinkedIn](https://www.linkedin.com/posts/jessevanelteren_tekst-analyse-van-tweede-kamer-moties-activity-6774418980808613888-V5PV) post.
 
             Dank gaat uit naar:
         
