@@ -33,22 +33,22 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 st.image('data/moties.jpg',use_column_width=True)
 st.title('StemVinder')
+with st.beta_expander("⚙️ - Introductie ", expanded=True):
+    st.markdown(
+        """
+        Wat vindt jij belangrijk bij de verkiezingen? Deze app heeft met machine learning alle moties van afgelopen Tweede Kamerperiode geclusterd in 247 onderwerpen. De app matcht jouw zoekterm(en) aan gelijksoortige onderwerpen. 
+        Zo kan je er snel achterkomen hoe partijen hebben gestemd op wat jij belangrijk vindt. Per onderwerp zie je:
+        
+        1. Hoeveel moties partijen hebben ingediend
+        2. Hoe partijen hebben gestemd
+        3. Welke moties bij jouw onderwerp horen.
 
-st.markdown(
-    """
-    Wat vindt jij belangrijk bij de verkiezingen? Deze app heeft met machine learning alle moties van afgelopen Tweede Kamerperiode geclusterd in 247 onderwerpen. De app matcht jouw zoekterm(en) aan gelijksoortige onderwerpen. 
-    Zo kan je er snel achterkomen hoe partijen hebben gestemd op wat jij belangrijk vindt. Per onderwerp zie je:
-    
-    1. Hoeveel moties partijen hebben ingediend
-    2. Hoe partijen hebben gestemd
-    3. Welke moties bij jouw onderwerp horen.
+        Als je dit interessant vindt is er nog meer leesvoer:
+        * [Blog 1](https://jvanelteren.github.io/blog/2021/02/20/kamermotiesEDA.html) over trends
+        * [Blog 2](https://jvanelteren.github.io/blog/2021/03/07/kamermoties_topics.html) over de inhoud van de moties
 
-    Als je dit interessant vindt is er nog meer leesvoer:
-    * [Blog 1](https://jvanelteren.github.io/blog/2021/02/20/kamermotiesEDA.html) over trends
-    * [Blog 2](https://jvanelteren.github.io/blog/2021/03/07/kamermoties_topics.html) over de inhoud van de moties
-
-    Veel plezier ermee en succes met stemmen 17 maart!
-    """)
+        Veel plezier ermee en succes met stemmen 17 maart!
+        """)
 
 @st.cache(max_entries = 1, ttl = None, allow_output_mutation=True)
 def load_model():
@@ -125,18 +125,17 @@ def get_df_slice(df):
 
 
 
-def pca_topic(df, topic, kamer, twodim=False):
-    column_list = df.columns
-    source = df[(df['Topic_initial'] == topic) & (df['Kamer'] == kamer)]
+def pca_topic(df, topic, twodim=False):
+    source = df[(df['Topic_initial'] == topic)]
     num_moties = len(source)
     if twodim:
         source, explained_variance_ratio_ = get_pca(source, n_components = 2, return_ratio=True)
     else:
         source, explained_variance_ratio_ = get_pca(source, n_components = 1, return_ratio=True)
-    mid = (source['x'].max() + source['x'].min())/2
-    median = source['x'].median()
-    if source[source['partij'] =='VVD']['x'].values > median: # make sure that VVD is on the right part of the x-axis
-        source['x'] += 2 * (mid - source['x'])
+    # mid = (source['x'].max() + source['x'].min())/2
+    # median = source['x'].median()
+    # if source[source['partij'] =='VVD']['x'].values > median: # make sure that VVD is on the right part of the x-axis
+    #     source['x'] += 2 * (mid - source['x'])
     if twodim:
         width = 700
         y_scale_ratio = explained_variance_ratio_[1]/explained_variance_ratio_[0]
@@ -172,16 +171,12 @@ def pca_topic(df, topic, kamer, twodim=False):
             st.write(
                 """
             Deze techniek heet Pricipal Component Analysis en probeert variatie op veel dimensies (in dit geval veel moties)
-            terug te brengen naar minder dimensies (in dit geval twee, een x en een y as). Als je bijvoorbeeld twee partijen hebt die
-            altijd precies tegenovergesteld stemmen dan heb hoef je niet heel veel verschillende moties te visualiseren, maar kan je gewoon de twee tegenover elkaar
-            op één as tekenen.
+            terug te brengen naar minder dimensies (in dit geval twee, een x en een y as). Als je bijvoorbeeld twee partijen hebt die altijd precies tegenovergesteld stemmen dan heb hoef je niet heel veel verschillende moties te visualiseren, maar kan je gewoon de twee tegenover elkaar op één as tekenen.
 
             De afstand tussen twee partijen geeft aan hoe verschillend ze stemmen. 
-            Het betrouwbaarheid percentage geeft aan hoeveel van de variatie in het stemgedrag wordt verklaard door de grafiek. Hoe lager dit is des te minder waarde
-            je eraan moet hechten. 
+            Het betrouwbaarheid percentage geeft aan hoeveel van de variatie in het stemgedrag wordt verklaard door de grafiek. Hoe lager dit is des te minder waarde je eraan moet hechten. 
             
-            Een voorbeeld: stel dat twee partijen precies op hetzelfde punt staan, dan betekent dit bij een betrouwbaarheid van 100% dat ze identiek stemmen.
-            Maar als het percentage 50% is betekent dat er nog steeds flink wat variatie is in het stemgedrag is dat niet wordt verklaard door de grafiek.
+            Een voorbeeld: stel dat twee partijen precies op hetzelfde punt staan, dan betekent dit bij een betrouwbaarheid van 100% dat ze identiek stemmen. Maar als het percentage 50% is betekent dat er nog steeds flink wat variatie is in het stemgedrag is dat niet wordt verklaard door de grafiek.
                 """
             )
         return chart
@@ -209,11 +204,11 @@ df = load_df()
 
 
 search_term = st.text_input('Kies je zoekterm(en)', '')
-
+NUM_TOPICS = 3
 # select relevant topic topic
 if search_term != '':
     try:
-        topic_words, word_scores, topic_scores, topic_nums = model.search_topics(keywords= search_term.split() , num_topics=3)
+        topic_words, word_scores, topic_scores, topic_nums = model.search_topics(keywords= search_term.split() , num_topics=NUM_TOPICS)
         error = False
     except:
         st.write('(Een van de) woorden komt niet voor in de ingediende moties. Probeer opnieuw')
@@ -227,16 +222,13 @@ if search_term != '':
             Het Top2Vec algoritme heeft moties (op basis van de woorden) automatisch geclustert in bijna 250 onderwerpen.
             Per onderwerp worden de woorden weergegeven die het meest onderscheidend zijn. Lees de woorden door dan krijg je een idee wat er met het onderwerp ongeveer bedoeld wordt.
             
-            Je kan klikken op de andere onderwerpen om hier de resultaten van te zien.
-            Je kan ook verder filteren met het linkermenu (pijltje linksboven voor mobiele gebruikers).
+            Met het menu aan de linkerkant kan je verder filteren (voor mobiele gebruikers: pijltje linksboven klikken).
                 """
             )
         # selected_topic = topic_nums[0]
         # selected_topic_idx = 0
-    
-        for i, (topic, topic_num) in enumerate(zip(topic_words, topic_nums)):
-            st.markdown(', '.join(word for word in topic[:20]))
 
+        empties = [st.empty() for i in range(NUM_TOPICS)]
         st.sidebar.markdown('Gebruik deze filters om verder te filteren. De grafieken en moties updaten vanzelf')
         topic_options = [' '.join(word for word in topic[:1]) for topic in topic_words]
         selected_topic = st.sidebar.radio("Onderwerp: ", (topic_options), key=6)
@@ -245,17 +237,24 @@ if search_term != '':
         selected_year= st.sidebar.radio("Ingediend in: ", (['Alle jaren'] + ['2017', '2018', '2019', '2020']), key=9)
         max_moties = st.sidebar.slider('maximaal aantal weergegeven moties', 0, 20,5)
 
+
         selected_topic_idx = topic_options.index(selected_topic)
         assert selected_topic_idx in [0,1,2]
 
         selected_topic = topic_nums[selected_topic_idx]
         assert selected_topic in list(range(250))
 
+        for i in range(NUM_TOPICS):
+            topic_description = ', '.join(word for word in topic_words[i][:20])
+            if i == selected_topic_idx:
+                topic_description = f"**{topic_description}**"
+            empties[i].markdown(topic_description)
+
         # select data and plot charts
         source = get_df_slice(df)
         selected_topic_summary = ' '.join(word for word in topic_words[selected_topic_idx][:1])
-        st.markdown(f'## Geselecteerd onderwerp: "{selected_topic_summary}"')
-        st.write('Filters:',selected_soort,selected_party,selected_year)
+        st.markdown(f'## Geselecteerd onderwerp: {selected_topic_summary}')
+        st.write(f'Filters: {selected_party.lower()}, {selected_year.lower()}, {selected_soort.lower()}')
 
         st.write(len(source), 'moties ingediend')
         chart = aantal_moties_chart(source.groupby(['Indienende_partij', 'BesluitTekst']).size().reset_index(name='Aantal moties'))
@@ -264,7 +263,7 @@ if search_term != '':
         # width and height does not work altair/streamlit
         if len(source)>2:
             st.markdown(f'## Stemgedrag van partijen op deze {len(source)} moties')
-            st.altair_chart(pca_topic(source, selected_topic, 'Rutte III', twodim=True), use_container_width=True  )
+            st.altair_chart(pca_topic(source, selected_topic, twodim=True), use_container_width=True  )
         if len(source)>0:
             st.markdown(f'## Moties die het beste passen bij dit onderwerp')
 
@@ -298,8 +297,3 @@ if search_term != '':
             [![License: Creative Commons Naamsvermelding-GelijkDelen 4.0 Internationaal-licentie](https://i.creativecommons.org/l/by-sa/4.0/80x15.png)](https://creativecommons.org/licenses/by-sa/3.0/) 2021 Jesse van Elteren
                 """
         )
-
-
-
-
-# %%
