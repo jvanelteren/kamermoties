@@ -54,9 +54,9 @@ st.markdown(
     2. Hoe partijen hebben gestemd
     3. Welke moties bij jouw onderwerp horen.
 
-    Als je dit interessant vind kan je hier meer leesvoer vinden
+    Als je dit interessant vindt is er nog meer leesvoer:
     * [Blog 1](https://jvanelteren.github.io/blog/2021/02/20/kamermotiesEDA.html) over trends
-    * [Blog 2](https://jvanelteren.github.io/blog/2021/03/10/kamermoties_topics.html) over de inhoud van de moties
+    * [Blog 2](https://jvanelteren.github.io/blog/2021/03/07/kamermoties_topics.html) over de inhoud van de moties
 
     Veel plezier ermee en succes met stemmen 17 maart!
     """)
@@ -143,7 +143,6 @@ def pca_topic(df, topic, kamer, twodim=False):
     if source[source['partij'] =='VVD']['x'].values > median: # make sure that VVD is on the right part of the x-axis
         source['x'] += 2 * (mid - source['x'])
     if twodim:
-        st.write(explained_variance_ratio_[0], explained_variance_ratio_[1])
         width = 700
         y_scale_ratio = explained_variance_ratio_[1]/explained_variance_ratio_[0]
         points = alt.Chart(source,width= width, height = width * y_scale_ratio).mark_point().encode(
@@ -230,19 +229,18 @@ if search_term != '':
         with st.beta_expander("⚙️ - Uitleg ", expanded=False):
             st.write(
                 """
-            Het Top2Vec algoritme heeft moties (op basis van de woorden) geclustert in heel veel onderwerpen.
-            Alle onderwerpen hebben een nummer gekregen, beginnend met 0. Het ontwerp dat het beste matched met jouw
-            zoekterm staat bovenaan. Een match score van boven de 20 is meestal wel goed.
-
-            De woorden die vervolgens worden weergegeven zijn de woorden die volgens het model het meest onderscheidend zijn voor dit onderwerp
-            Lees de woorden door dan krijg je een idee wat er met het onderwerp ongeveer bedoelt wordt. Vervolgens kan je ook nog met de filters
-            de andere onderwerpen kiezen om deze verder te onderzoeken.
+            Het Top2Vec algoritme heeft moties (op basis van de woorden) automatisch geclustert in bijna 250 onderwerpen.
+            Per onderwerp worden de woorden weergegeven die het meest onderscheidend zijn. Lees de woorden door dan krijg je een idee wat er met het onderwerp ongeveer bedoeld wordt.
+            
+            Je kan klikken op de andere onderwerpen om hier de resultaten van te zien.
+            Je kan ook verder filteren met het linkermenu (pijltje linksboven voor mobiele gebruikers).
                 """
             )
         selected_topic = topic_nums[0]
+        selected_topic_summary = ' '.join(word for word in topic_words[0][:3])
         for i, (topic, topic_num) in enumerate(zip(topic_words, topic_nums)):
             # st.write('Onderwerp ', topic_nums[i], ' Match: ', round(topic_scores[i]*100), '\n\n ',' '.join(word for word in topic[:20]))
-            st.write('Onderwerp ', topic_nums[i], ' Match: ', round(topic_scores[i]*100))
+            # st.write('Onderwerp ', topic_nums[i], ' Match: ', round(topic_scores[i]*100))
             if st.button(' '.join(word for word in topic[:20]), key=i):
                 selected_topic = topic_num
 
@@ -260,16 +258,17 @@ if search_term != '':
         # select data and plot charts
         source = get_df_slice(df)
 
-        st.markdown(f'## {len(source)} Moties ingediend door partijen op onderwerp {selected_topic}')
+        st.markdown(f'## "{selected_topic_summary}"')
+        st.write(len(source), 'moties ingediend')
         chart = aantal_moties_chart(source.groupby(['Indienende_partij', 'BesluitTekst']).size().reset_index(name='Aantal moties'))
         st.altair_chart(chart, use_container_width=True)
 
         # width and height does not work altair/streamlit
         if len(source)>2:
-            st.markdown(f'## Stemgedrag van partijen op onderwerp {selected_topic}')
+            st.markdown(f'## Stemgedrag van partijen op deze {len(source)} moties')
             st.altair_chart(pca_topic(source, selected_topic, 'Rutte III', twodim=True), use_container_width=True  )
         if len(source)>0:
-            st.markdown(f'## Moties die het beste passen bij onderwerp {selected_topic}')
+            st.markdown(f'## Moties die het beste passen bij dit onderwerp')
 
             topic_moties = list(source[(source['Topic_initial']==selected_topic)].index)
             topic_scores = list(source[(source['Topic_initial']==selected_topic)]['Topic_score'])
