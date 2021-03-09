@@ -11,14 +11,14 @@ import os
 import re
 
 
-code = """<script async defer data-domain="stemvinder.ew.r.appspot.com" src="https://plausible.io/js/plausible.js"></script>"""
-a=os.path.dirname(st.__file__)+'/static/index.html'
-with open(a, 'r') as f:
-    data=f.read()
-    if len(re.findall('plausible', data))==0:
-        with open(a, 'w') as ff:
-            newdata=re.sub('<head>','<head>'+code,data)
-            ff.write(newdata)
+# code = """<script async defer data-domain="stemvinder.ew.r.appspot.com" src="https://plausible.io/js/plausible.js"></script>"""
+# a=os.path.dirname(st.__file__)+'/static/index.html'
+# with open(a, 'r') as f:
+#     data=f.read()
+#     if len(re.findall('plausible', data))==0:
+#         with open(a, 'w') as ff:
+#             newdata=re.sub('<head>','<head>'+code,data)
+#             ff.write(newdata)
 
 # hide hamburger menu
 hide_streamlit_style = """
@@ -33,7 +33,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 st.image('data/moties.jpg',use_column_width=True)
 st.title('StemVinder')
-with st.beta_expander("⚙️ - Introductie ", expanded=True):
+with st.beta_expander("⚙️ - Introductie ", expanded=False):
     st.markdown(
         """
         Wat vind jij belangrijk bij de verkiezingen? Deze app heeft met machine learning alle moties van afgelopen Tweede Kamerperiode geclusterd in 247 onderwerpen. De app matcht jouw zoekterm(en) aan gelijksoortige onderwerpen. 
@@ -165,7 +165,7 @@ def pca_topic(df, topic, twodim=False):
             titleFontSize=14,
             grid=False).configure_title(fontSize=66)
 
-        st.write(f'Stemgedrag op onderwerp {selected_topic}, {num_moties} moties, grafiek {round(sum(explained_variance_ratio_)*100)}% betrouwbaar')
+        st.write(f'{num_moties} moties, grafiek {round(sum(explained_variance_ratio_)*100)}% betrouwbaar')
 
         with st.beta_expander("⚙️ - Uitleg ", expanded=False):
             st.write(
@@ -215,20 +215,25 @@ if search_term != '':
         error = True
 
     if not error:
-        st.markdown(f'## Onderwerpen die het beste passen bij {search_term}')
+        st.markdown(f'## **Moties die het beste passen bij {search_term}**')
         with st.beta_expander("⚙️ - Uitleg ", expanded=False):
             st.write(
                 """
             Het Top2Vec algoritme heeft moties (op basis van de woorden) automatisch geclustert in bijna 250 onderwerpen.
-            Per onderwerp worden de woorden weergegeven die het meest onderscheidend zijn. Lees de woorden door dan krijg je een idee wat er met het onderwerp ongeveer bedoeld wordt.
-            
             Met het menu aan de linkerkant kan je verder filteren (voor mobiele gebruikers: pijltje linksboven klikken).
+
+            Per onderwerp worden de woorden weergegeven die het meest onderscheidend zijn. Lees de woorden door dan krijg je een idee wat er met het onderwerp ongeveer bedoeld wordt.
+            Hieronder zie je de drie onderwerpen die het beste bij je zoekterm passen. Standaard kiest het model de eerste, maar met de filters links kan je dit aanpassen.
+            De onderwerpen (vetgedrukt het geselecteerde onderwerp):
+
                 """
             )
+            st.text=()
+            empties = [st.empty() for i in range(NUM_TOPICS)]
         # selected_topic = topic_nums[0]
         # selected_topic_idx = 0
 
-        empties = [st.empty() for i in range(NUM_TOPICS)]
+        
         st.sidebar.markdown('Gebruik deze filters om verder te filteren. De grafieken en moties updaten vanzelf')
         topic_options = [' '.join(word for word in topic[:1]) for topic in topic_words]
         selected_topic = st.sidebar.radio("Onderwerp: ", (topic_options), key=6)
@@ -253,19 +258,19 @@ if search_term != '':
         # select data and plot charts
         source = get_df_slice(df)
         selected_topic_summary = ' '.join(word for word in topic_words[selected_topic_idx][:1])
-        st.markdown(f'## Geselecteerd onderwerp: {selected_topic_summary}')
-        st.write(f'Filters: {selected_party.lower()}, {selected_year.lower()}, {selected_soort.lower()}')
+        # st.markdown(f'## **Geselecteerd onderwerp: {selected_topic_summary}**')
+        # st.write(f'Filters: {selected_party.lower()}, {selected_year.lower()}, {selected_soort.lower()}')
 
-        st.write(len(source), 'moties ingediend')
+        st.write(len(source), 'moties ingediend door deze partijen:')
         chart = aantal_moties_chart(source.groupby(['Indienende_partij', 'BesluitTekst']).size().reset_index(name='Aantal moties'))
         st.altair_chart(chart, use_container_width=True)
 
         # width and height does not work altair/streamlit
         if len(source)>2:
-            st.markdown(f'## Stemgedrag van partijen op deze {len(source)} moties')
+            st.markdown(f'## **Stemgedrag van partijen op deze {len(source)} moties**')
             st.altair_chart(pca_topic(source, selected_topic, twodim=True), use_container_width=True  )
         if len(source)>0:
-            st.markdown(f'## Moties die het beste passen bij dit onderwerp')
+            st.markdown(f'## **Moties die het beste passen bij dit onderwerp**')
 
             topic_moties = list(source[(source['Topic_initial']==selected_topic)].index)
             topic_scores = list(source[(source['Topic_initial']==selected_topic)]['Topic_score'])
@@ -275,8 +280,9 @@ if search_term != '':
                 result = f"Resultaat: {df.loc[motie_id,'BesluitTekst']}"
                 voor = f"Voor: {', '.join(df.loc[motie_id,'Partijen_Voor'])}"
                 tegen = f"Tegen: {', '.join(df.loc[motie_id,'Partijen_Tegen'])}"
+                
+                st.text_area('', df.loc[motie_id,'Text'], height=500, key=i)
                 st.write(summary, '  \n', result, '  \n', voor, '  \n', tegen)
-                st.text_area('Inhoud van de motie:', df.loc[motie_id,'Text'], height=500, key=i)
         else:
             st.markdown(f'### Geen moties gevonden (staan er filters aan?)')
 
