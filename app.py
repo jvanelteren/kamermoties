@@ -9,16 +9,17 @@ from sklearn.impute import SimpleImputer
 from sklearn.decomposition import PCA
 import os
 import re
+from PIL import Image
 
 
-# code = """<script async defer data-domain="stemvinder.ew.r.appspot.com" src="https://plausible.io/js/plausible.js"></script>"""
-# a=os.path.dirname(st.__file__)+'/static/index.html'
-# with open(a, 'r') as f:
-#     data=f.read()
-#     if len(re.findall('plausible', data))==0:
-#         with open(a, 'w') as ff:
-#             newdata=re.sub('<head>','<head>'+code,data)
-#             ff.write(newdata)
+code = """<script async defer data-domain="stemvinder.ew.r.appspot.com" src="https://plausible.io/js/plausible.js"></script>"""
+a=os.path.dirname(st.__file__)+'/static/index.html'
+with open(a, 'r') as f:
+    data=f.read()
+    if len(re.findall('plausible', data))==0:
+        with open(a, 'w') as ff:
+            newdata=re.sub('<head>','<head>'+code,data)
+            ff.write(newdata)
 
 # hide hamburger menu
 hide_streamlit_style = """
@@ -30,9 +31,9 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
 
-
-st.image('data/moties.jpg',use_column_width=True)
-st.title('StemVinder')
+image = Image.open('data/moties.jpg') 
+st.image(image, use_column_width=True) 
+st.title('StemVinder: supersnel inzicht in moties')
 with st.beta_expander("⚙️ - Introductie ", expanded=False):
     st.markdown(
         """
