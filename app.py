@@ -183,6 +183,7 @@ def pca_topic(df, topic, twodim=False):
         return chart
 
 def aantal_moties_chart(df):
+
     # Overview of topic distribution over all years
     return alt.Chart(df).mark_bar().encode(
         x=alt.X('Indienende_partij:O', sort='-y',title=None),
@@ -209,7 +210,7 @@ NUM_TOPICS = 3
 # select relevant topic topic
 if search_term != '':
     try:
-        topic_words, word_scores, topic_scores, topic_nums = model.search_topics(keywords= search_term.split() , num_topics=NUM_TOPICS)
+        topic_words, word_scores, topic_scores, topic_nums = model.search_topics(keywords= search_term.split() , num_topics=NUM_TOPICS, reduced=True)
         error = False
     except:
         st.write('(Een van de) woorden komt niet voor in de ingediende moties. Probeer opnieuw')
@@ -247,8 +248,8 @@ if search_term != '':
         selected_topic_idx = topic_options.index(selected_topic)
         assert selected_topic_idx in [0,1,2]
 
-        selected_topic = topic_nums[selected_topic_idx]
-        assert selected_topic in list(range(250))
+        selected_topic = topic_words[selected_topic_idx][0]
+        # assert selected_topic in list(range(250))
 
         for i in range(NUM_TOPICS):
             topic_description = ', '.join(word for word in topic_words[i][:20])
