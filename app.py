@@ -65,10 +65,14 @@ def init():
                 </style>
                 """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
-init()
+# init()
+
+@st.cache(max_entries = 1, ttl = 360000)
+def get_header():
+    return Image.open('data/moties.jpg') 
 
 def intro():
-    image = Image.open('data/moties.jpg') 
+    image = get_header()
     st.image(image, use_column_width=True) 
     st.title('StemVinder: supersnel inzicht in moties')
     with st.beta_expander("⚙️ - Introductie ", expanded=False):
@@ -222,15 +226,16 @@ if search_term != '':
             Het Top2Vec algoritme heeft moties (op basis van de woorden) automatisch geclustert in bijna 250 onderwerpen.
             Met het menu aan de linkerkant kan je verder filteren (voor mobiele gebruikers: pijltje linksboven klikken).
 
-            Per onderwerp worden de woorden weergegeven die het meest onderscheidend zijn. Lees de woorden door dan krijg je een idee wat er met het onderwerp ongeveer bedoeld wordt.
-            Hieronder zie je de drie onderwerpen die het beste bij je zoekterm passen. Standaard kiest het model de eerste, maar met de filters links kan je dit aanpassen.
-            De onderwerpen (vetgedrukt het geselecteerde onderwerp):
-
+            Per onderwerp worden de woorden weergegeven die het meest onderscheidend zijn.
+            Hieronder zie je de drie onderwerpen die het beste bij je zoekterm passen. Standaard kiest het model de eerste best passende onderwerp, maar met de filters links kan je dit aanpassen. 
+            Lees de woorden door dan krijg je een idee wat er met het onderwerp ongeveer bedoeld wordt.
                 """
             )
             st.text=()
-            empties = [st.empty() for i in range(NUM_TOPICS)]
-
+            empties = []
+            for i in range(NUM_TOPICS):
+                st.write('Onderwerp',i+1, '(beste match)' if i==0 else "")
+                empties.append(st.empty())
         
         # ADD SIDEBAR
         st.sidebar.markdown('Gebruik deze filters om verder te filteren. De grafieken en moties updaten vanzelf')
