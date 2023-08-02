@@ -3,3 +3,9 @@
 df_text_before_preprocessing
 moties_processed_df.pickle
 moties_unprocessed.pickle
+.tokens
+.tokens/
+streamlit-project
+moties_for_llm.pickle
+motie_summaries.pickle
+partij_summaries.pickle
