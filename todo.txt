@@ -1,0 +1,2 @@
+# Todo, een excelexport maken met de titels van de moties en de samenvatting van chatgpt ter referentie
+tidy up chatgpt code calls for later
