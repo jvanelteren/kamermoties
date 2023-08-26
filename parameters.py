@@ -23,25 +23,44 @@ party_colors = {
 }
 
 parties = [
-  'CDA',
-  'ChristenUnie',
-  'D66',
   'GroenLinks',
-  'PVV',
   'PvdA',
+  'Volt',
   'PvdD',
-  'SGP',
+  'BIJ1',
   'SP',
-  'VVD',
   'DENK',
-  'FVD',
+  'D66',
+  'ChristenUnie',
+  'Omtzigt',
+  'CDA',
+  'VVD',
   'BBB',
-  # 'Groep Van Haga',
+  'SGP',
   'JA21',
-  # 'Omtzigt',
-  # 'BIJ1',
-  'Volt']
+  'PVV',
+  'Groep Van Haga',
+  'FVD',]
 
+all_parties = [
+  'GroenLinks',
+  'PvdA',
+  'Volt',
+  'PvdD',
+  'BIJ1',
+  'SP',
+  'DENK',
+  'D66',
+  'ChristenUnie',
+  'Omtzigt',
+  'CDA',
+  'VVD',
+  'BBB',
+  'SGP',
+  'JA21',
+  'PVV',
+  'Groep Van Haga',
+  'FVD',]
 
 party_size = {
   'CDA': 14,
