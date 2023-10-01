@@ -10,3 +10,6 @@ moties_for_llm.pickle
 motie_summaries.pickle
 partij_summaries.pickle
 moties_for_llm_incl_moties.pickle
+final_summaries_full_kamer.pickle
+final_summaries_full_kamer.xlsx
+motie_samenvattingen.xlsx
